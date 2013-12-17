@@ -1,10 +1,11 @@
 package translator;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
-import java.util.List;
-import java.io.*;
-
 import java.util.HashMap;
+import java.util.List;
 
 public final class PHP5File extends JavaInterpreter {
 
@@ -13,11 +14,11 @@ public final class PHP5File extends JavaInterpreter {
 	private boolean m_includeMain = false;
 	private JavaFile m_java = null;
 
-	private ArrayList<String> m_aInlineStrings = new ArrayList<String>();
-	
+	private final ArrayList<String> m_aInlineStrings = new ArrayList<String>();
+
 	private ArrayList<String> m_aSourceDirs = new ArrayList<String>();
 
-	private ArrayList<PHPMethod> m_aPHPMethods = new ArrayList<PHPMethod>();
+	private final ArrayList<PHPMethod> m_aPHPMethods = new ArrayList<PHPMethod>();
 
 	private static ArrayList<String> m_aReservedWords = new ArrayList<String>(13);
 
@@ -37,18 +38,18 @@ public final class PHP5File extends JavaInterpreter {
 		m_aReservedWords.add("throw");
 	}
 
-	private ArrayList<EnumDeclaration> m_aIncludedEnums = new ArrayList<EnumDeclaration>();
+	private final ArrayList<EnumDeclaration> m_aIncludedEnums = new ArrayList<EnumDeclaration>();
 
-	private HashMap<String,JavaFile> m_aJavaFiles = new HashMap<String,JavaFile>(100);
-	private ArrayList<String> m_sIncludedFiles = new ArrayList<String>(100);
-	private ArrayList<String> m_sIncludedDirs = new ArrayList<String>(100);
+	private final HashMap<String,JavaFile> m_aJavaFiles = new HashMap<String,JavaFile>(100);
+	private final ArrayList<String> m_sIncludedFiles = new ArrayList<String>(100);
+	private final ArrayList<String> m_sIncludedDirs = new ArrayList<String>(100);
 
-	private ArrayList<String> m_aSharedNames = new ArrayList<String>();
+	private final ArrayList<String> m_aSharedNames = new ArrayList<String>();
 
 	private Method currentMethod = null;
 	private ClassDeclaration curClass = null;
-	private ArrayList<Assignment> m_aCurrentVariables = new ArrayList<Assignment>();
-	private ArrayList<ClassDeclaration> m_aPrivateClasses = new ArrayList<ClassDeclaration>();
+	private final ArrayList<Assignment> m_aCurrentVariables = new ArrayList<Assignment>();
+	private final ArrayList<ClassDeclaration> m_aPrivateClasses = new ArrayList<ClassDeclaration>();
 	private int m_iPrivateClasses = 0;
 
 	public void setSourcePath(ArrayList<String> s) {
@@ -107,11 +108,12 @@ public final class PHP5File extends JavaInterpreter {
 		fileWriter = new StringBuilder(1000);
 		fileWriter.append("<?php\n");
     fileWriter.append("\tinclude_once(\"PHPHelper.php\");\n");
+    fileWriter.append("\tinclude_once(\"translator/JavaBase.class.php\");\n");
 		writeClass(m_javaFile.getMainClass());
 		fileWriter.append("?>");
 
 	}
-	
+
 	private void writePropertyDeclarations() {
 		for(PrivateProperty pp : curClass.getPrivateProperties()) {
 			writePropertyDeclaration(pp);
@@ -173,7 +175,7 @@ public final class PHP5File extends JavaInterpreter {
 		for(PublicProperty pp : curClass.getPublicProperties()) {
 			writeInitStaticVarDeclaration(pp);
 		}
-		
+
 		for(StaticBlock s : curClass.getStaticBlocks()) {
 			writeBlockBody(s.getBlockBody(),3);
 		}
@@ -242,9 +244,9 @@ public final class PHP5File extends JavaInterpreter {
 		for(String sName : m_aSharedNames) {
 			writeMassCaller(sName);
 		}
-		
+
 		m_aSharedNames.clear();
-	
+
 	}
 
 	private void writeInlineStringFix() {
@@ -356,7 +358,7 @@ public final class PHP5File extends JavaInterpreter {
 			fileWriter.append(");\n");
 		}
 	}
-	
+
 	private void writeInternalClasses() {
 
 		ArrayList<ClassDeclaration> aPrivateClasses = curClass.getPrivateClasses();
@@ -372,7 +374,7 @@ public final class PHP5File extends JavaInterpreter {
 		}
 
 	}
-	
+
 	private void writeEnumDeclarations() {
 		for(EnumDeclaration e : m_aIncludedEnums) {
 			writeEnumDeclaration(e);
@@ -385,7 +387,7 @@ public final class PHP5File extends JavaInterpreter {
 		fileWriter.append("public $BOOK = 'BOOK';\n");
 		fileWriter.append("}\n");
 	}
-	
+
 	public void writeConstructors(ArrayList<Constructor> aConstructors,ClassDeclaration curClass,boolean parentCall) {
 		int iNumConstructors = aConstructors.size();
 		Type oExtends = curClass.getExtends();
@@ -444,7 +446,7 @@ public final class PHP5File extends JavaInterpreter {
 				}
 			}
 			fileWriter.append("\t}\n");
-			
+
 			for(int i=0;i<iNumConstructors;i++) {
 				writeConstructor(aConstructors.get(i),sBaseName+i,false,parentCall);
 			}
@@ -528,9 +530,9 @@ public final class PHP5File extends JavaInterpreter {
 			fileWriter.append("\t\t}\n");
 		}
 	}
-	
+
 	public void writeMassCaller(String s) {
-		
+
 		fileWriter.append("\tpublic function "+s+"() {\n\t\t$arg_list = func_get_args();\n\t\t$num_args = count($arg_list);\n");
 
 		ArrayList<PublicMethod> aPublicMethods = m_java.getMainClass().getPublicMethods();
@@ -635,7 +637,7 @@ public final class PHP5File extends JavaInterpreter {
 
 		if(!m.getAbstract()) {
 			fileWriter.append("{\n");
-			
+
 			for(Parameter p : m.getParameters()) {
 				if(isPrimitiveWrapper(p.getType())) {
 					fileWriter.append("\t\t$"+p.getName()+" = new "+getFullClassName(p.getType())+"($"+p.getName()+");\n");
@@ -679,7 +681,7 @@ public final class PHP5File extends JavaInterpreter {
 				return true;
 			}
 		}
-		
+
 		for(PublicProperty pp : curClass.getPublicProperties()) {
 			if(pp.getStatic()&&s.equals(pp.getName())) {
 				return true;
@@ -793,7 +795,7 @@ public final class PHP5File extends JavaInterpreter {
 				While w = (While)line;
 				writeTabs(depth);
 				fileWriter.append("while(");
-				writeEquals((Equals)w.getArgument());
+				writeEquals(w.getArgument());
 				fileWriter.append(") {\n");
 				writeBlockBody(w.getBlockBody(),depth+1);
 				writeTabs(depth);
@@ -807,7 +809,7 @@ public final class PHP5File extends JavaInterpreter {
 				If w = (If)line;
 				writeTabs(depth);
 				fileWriter.append("if(");
-				Equals ifTest = (Equals)w.getArgument();
+				Equals ifTest = w.getArgument();
 				writeEquals(ifTest);
 				fileWriter.append(") {\n");
 				writeBlockBody(w.getBlockBody(),depth+1);
@@ -817,7 +819,7 @@ public final class PHP5File extends JavaInterpreter {
 				Switch w = (Switch)line;
 				writeTabs(depth);
 				fileWriter.append("switch(");
-				writeEquals((Equals)w.getArgument());
+				writeEquals(w.getArgument());
 				fileWriter.append(") {\n");
 				writeBlockBody(w.getBlockBody(),depth+1);
 				writeTabs(depth);
@@ -826,7 +828,7 @@ public final class PHP5File extends JavaInterpreter {
 				ElseIf w = (ElseIf)line;
 				writeTabs(depth);
 				fileWriter.append("else if(");
-				writeEquals((Equals)w.getArgument());
+				writeEquals(w.getArgument());
 				fileWriter.append(") {\n");
 				writeBlockBody(w.getBlockBody(),depth+1);
 				writeTabs(depth);
@@ -849,7 +851,7 @@ public final class PHP5File extends JavaInterpreter {
 			} else if(line instanceof Throw) {
 				Throw w = (Throw)line;
 				writeTabs(depth);
-				
+
 				//Check for a throw which is not caught.
 				if(w.getParentCatch()!=null&&w.getParentTry().getFinally()!=null) {
 					fileWriter.append("$t_uncaught_throw_"+w.getParentTry().hashCode()+"=");
@@ -970,7 +972,7 @@ public final class PHP5File extends JavaInterpreter {
 	private void writeConstructor(Constructor c,String n,boolean b,boolean parentCall) {
 
 		if(c!=null)
-			currentMethod = (Method)c;
+			currentMethod = c;
 		m_aCurrentVariables.clear();
 		fileWriter.append("\tpublic function "+n+"(");
 
@@ -1058,7 +1060,7 @@ public final class PHP5File extends JavaInterpreter {
 				return true;
 			}
 		}
-		
+
 		for(ProtectedMethod pp : curClass.getProtectedMethods()) {
 			if(pp.getStatic()&&pp.getName().equals(methodName)) {
 				return true;
@@ -1201,7 +1203,7 @@ public final class PHP5File extends JavaInterpreter {
 		return null;
 
 	}
-	
+
 	private String findPackage(String s) {
 		for(String path : m_aSourceDirs) {
 			File f = new File(path + "/" + s);
@@ -1211,7 +1213,7 @@ public final class PHP5File extends JavaInterpreter {
 		}
 		throw new RuntimeException("Could not find package for: "+s);
 	}
-	
+
 	private String findFile(String s) {
 		for(String path : m_aSourceDirs) {
 			File f = new File(path + "/" + s);
@@ -1290,7 +1292,7 @@ public final class PHP5File extends JavaInterpreter {
 		}
 
 		getIncludedFilesFromJavaFile(j);
-		
+
 		for(String sIncludedFile : m_sIncludedFiles) {
 			if(sIncludedFile.endsWith("."+sClassName)||sIncludedFile.equals(sClassName)) {
 				FileTranslator file = new FileTranslator(findFile(sIncludedFile.replaceAll("\\.","/")+".java"));
@@ -1396,7 +1398,7 @@ public final class PHP5File extends JavaInterpreter {
 						if(isDelimeter(value))
 							break;
 					}
-					
+
 					int iStartFirst = j+1;
 					int iEndFirst = 0;
 					Argument a1 = new Argument();
@@ -1448,7 +1450,7 @@ public final class PHP5File extends JavaInterpreter {
 		}
 		return false;
 	}
-	
+
 	private Type getParameterType(String s) {
 		if(currentMethod!=null) {
 			for(Parameter p : currentMethod.getParameters()) {
@@ -1509,7 +1511,7 @@ public final class PHP5File extends JavaInterpreter {
 	private boolean isLocalVariable(String vName) {
 		return getLocalVariable(vName)!=null;
 	}
-	
+
 	private Assignment getLocalVariable(String vName) {
 
 		for(int x=m_aCurrentVariables.size()-1;x>=0;x--) {
@@ -1830,7 +1832,7 @@ public final class PHP5File extends JavaInterpreter {
 				s.equals("java.lang.Character")
 			);
 	}
-	
+
 	private String getDefaultReturnForWrapper(Type t) {
 		String s = getFullClassName(t);
 		if(s.equals("java.lang.Byte")) {
@@ -1938,7 +1940,7 @@ public final class PHP5File extends JavaInterpreter {
 		fileWriter.append("(");
 		ArrayList<Argument> arguments = f.getArguments();
 		for(int j=0;j<arguments.size();j++) {
-			writeEquals((Equals)arguments.get(j));
+			writeEquals(arguments.get(j));
 			if(j<arguments.size()-1)
 				fileWriter.append(",");
 		}
@@ -1970,7 +1972,7 @@ public final class PHP5File extends JavaInterpreter {
 					} else if(value instanceof FunctionCall) {
 						appendFunctionCall((FunctionCall)value,new FunctionCall("."+sWrapperFunc+"()"));
 					} else {
-						
+
 					}
 				}
 			}
@@ -2014,7 +2016,7 @@ public final class PHP5File extends JavaInterpreter {
 					Argument a1 = new Argument();
 					a1.addValue(aValues.get(i-1));
 					f.getArguments().add(a1);
-					
+
 					Argument a2 = new Argument();
 					a2.addValue(aValues.get(i+1));
 					f.getArguments().add(a2);
@@ -2053,7 +2055,7 @@ public final class PHP5File extends JavaInterpreter {
 
 			if(iNextIndex!=i&&isPrimitiveWrapper(getTypeOf(aValues.get(iNextIndex),m_java,curClass,null))) {
 				ArrayList<Argument> args = new ArrayList<Argument>(2);
-				
+
 				Argument a1 = new Argument();
 				a1.addValue(aValues.get(iNextIndex));
 
@@ -2114,7 +2116,7 @@ public final class PHP5File extends JavaInterpreter {
 					e1.addValue(new BitwiseOr());
 				else if(aValues.get(i) instanceof BitwiseXOrAssignment)
 					e1.addValue(new BitwiseXOr());
-				
+
 				Parenthesis p3 = new Parenthesis();
 				Equals ep3 = new Equals();
 				while(i+1<aValues.size()) {
@@ -2138,7 +2140,7 @@ public final class PHP5File extends JavaInterpreter {
 
 	private void writeEquals(Equals e) {
 		if(e!=null) {
-		
+
 			ArrayList<Object> aValues = e.getValues();
 
 			fixParenthesis(aValues);
@@ -2269,13 +2271,13 @@ public final class PHP5File extends JavaInterpreter {
 							}
 						}
 						for(int j=0;j<arguments.size();j++) {
-							writeEquals((Equals)arguments.get(j));
+							writeEquals(arguments.get(j));
 							if(j<arguments.size()-1) {
 								fileWriter.append(",");
 							}
 						}
 						fileWriter.append(")");
-						
+
 						fileWriter.append(")");
 						if(isPrimitiveWrapper(o.getType())) {
 							fileWriter.append("->"+getDefaultReturnForWrapper(o.getType())+"()");
